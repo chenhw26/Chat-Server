@@ -84,37 +84,37 @@ class Server(threading.Thread):
 		time.sleep(0.1)
 		self.sock.send('0'.encode('utf-8'))
 
-		try:
-			while True:                                             #接受客户消息
-				cmd = self.sock.recv(4096).decode('utf-8')
-				print('rec:', cmd)
-				if cmd[0] == '0':
-					PrivateChat.private_chat(cmd[1:], self.profile, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
-				elif cmd[0] == '1':
-					GroupChat.group_chat(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock, self.group_locks, self.group_locks_lock)
-				elif cmd[0] == '2':
-					Moments.moments(cmd[1:], self.id, self.sock, self.usr_locks)
-				elif cmd[0] == '3':
-					FriendsManage.friends_manage(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
-				elif cmd[0] == '4':      # 拉取个人信息
-					profile = (Usr.get_profile(self.id))[0]
-					allfriends = Usr.get_friends(self.id)
-					allblack = Usr.get_black(self.id)
-					allgroups = Usr.get_groups(self.id)
-					time.sleep(0.1)
-					self.sock.send(json.dumps(profile).encode('utf-8'))
-					time.sleep(0.1)
-					self.sock.send(json.dumps(allfriends).encode('utf-8'))
-					time.sleep(0.1)
-					self.sock.send(json.dumps(allblack).encode('utf-8'))
-					time.sleep(0.1)
-					self.sock.send(json.dumps(allgroups).encode('utf-8'))
-					time.sleep(0.1)
-				elif cmd[0] == '9':
-					break
-				else:
-					self.sock.send('0'.encode('utf-8'))
-		except: pass                                                #出现异常，退出循环，关闭线程	
+		# try:
+		while True:                                             #接受客户消息
+			cmd = self.sock.recv(4096).decode('utf-8')
+			print('rec:', cmd)
+			if cmd[0] == '0':
+				PrivateChat.private_chat(cmd[1:], self.profile, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
+			elif cmd[0] == '1':
+				GroupChat.group_chat(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock, self.group_locks, self.group_locks_lock)
+			elif cmd[0] == '2':
+				Moments.moments(cmd[1:], self.id, self.sock, self.usr_locks)
+			elif cmd[0] == '3':
+				FriendsManage.friends_manage(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
+			elif cmd[0] == '4':      # 拉取个人信息
+				profile = (Usr.get_profile(self.id))[0]
+				allfriends = Usr.get_friends(self.id)
+				allblack = Usr.get_black(self.id)
+				allgroups = Usr.get_groups(self.id)
+				time.sleep(0.1)
+				self.sock.send(json.dumps(profile).encode('utf-8'))
+				time.sleep(0.1)
+				self.sock.send(json.dumps(allfriends).encode('utf-8'))
+				time.sleep(0.1)
+				self.sock.send(json.dumps(allblack).encode('utf-8'))
+				time.sleep(0.1)
+				self.sock.send(json.dumps(allgroups).encode('utf-8'))
+				time.sleep(0.1)
+			elif cmd[0] == '9':
+				break
+			else:
+				self.sock.send('0'.encode('utf-8'))
+		# except: pass                                                #出现异常，退出循环，关闭线程	
 		self.onlinesocket_lock.acquire()
 		del self.onlinesocket[self.id]                                  # 删除该用户的sock
 		self.onlinesocket_lock.release()

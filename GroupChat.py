@@ -214,6 +214,11 @@ def exit_group(groupid, usrid, sock, usr_locks, group_locks, group_locks_lock):
     if str(usrid) in all_black.keys():
         del all_black[str(usrid)]
     
+    all_groups = Usr.get_groups(usrid)
+    if str(groupid) in all_groups.keys():
+        del all_groups[str(groupid)]
+    Usr.update_groups(all_groups, usrid, usr_locks[usrid])
+    
     if not all_mem:
         shutil.rmtree('group\\' + str(groupid))
     else:
@@ -221,11 +226,6 @@ def exit_group(groupid, usrid, sock, usr_locks, group_locks, group_locks_lock):
         Group.update_mem(groupid, all_mem, group_locks[groupid])
         Group.update_ad(groupid, all_ad, group_locks[groupid])
         Group.update_pingbi(groupid, all_black, group_locks[groupid])
-
-    all_groups = Usr.get_groups(groupid)
-    if str(groupid) in all_groups.keys():
-        del all_groups[str(groupid)]
-    Usr.update_groups(all_groups, usrid, usr_locks[usrid])
 
     time.sleep(0.1)
     # sock.send('0'.encode('utf-8'))
