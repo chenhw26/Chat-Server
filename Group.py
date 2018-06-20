@@ -135,13 +135,13 @@ def get_record(uid):
 	except:
 		return list()
 
-def add_record(uid, sendername, time, content, lock):
+def add_record(uid, sendername, senderid, time, content, lock):
 	"""添加一条聊天记录"""
 	try:
 		lock.acquire()
 		with open('group\\' + str(uid) + '\\record.txt') as fp:
 			record = json.load(fp)
-			record.append((sendername, time, content))
+			record.append((sendername, senderid, time, content))
 		with open('group\\' + str(uid) + '\\record.txt', 'w') as fp:
 			json.dump(record, fp)
 		lock.release()

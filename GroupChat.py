@@ -24,7 +24,7 @@ def send_group_msg(senderid, groupid, sock, onlinesocket, usr_locks, usr_locks_l
     msg_to_send = '1' + '0' + str(senderid) + str(groupid) + sendername + '\n' + groupname + '\n' + str(cur_time) + '\n' + content
 
     Group.check_lock(groupid, group_locks, group_locks_lock)
-    Group.add_record(groupid, sendername, cur_time, content, group_locks[groupid])      #写聊天记录
+    Group.add_record(groupid, sendername, senderid, cur_time, content, group_locks[groupid])      #写聊天记录
 
     for memid in all_mem.keys():                              #向所有群成员发送消息
         if str(memid) not in all_pingbi.keys():
