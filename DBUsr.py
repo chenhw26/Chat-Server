@@ -138,7 +138,19 @@ def get_moments(uid):
 def add_moments(new_moment, uid):
     '''添加一条说说'''
     conn = sqlite3.connect('Users\\' + str(uid) + '.db')
-    conn.execute('''INSERT into moments values (?,?,?)''', new_moment)
+    allmoments = conn.execute('''SELECT ID from moments''').fetchall()
+    if not allmoments:
+        curid = 10000
+    else:
+        curid = max(allmoments)[0] + 1
+    conn.execute('''INSERT into moments values (?,?,?)''', (curid,)+new_moment[:])
+    conn.commit()
+    conn.close()
+
+def del_moments(momentid, uid):
+    '''删除一条说说'''
+    conn = sqlite3.connect('Users\\' + str(uid) + '.db')
+    conn.execute('''DELETE from moments where ID=?''', (momentid,))
     conn.commit()
     conn.close()
 

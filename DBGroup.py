@@ -1,6 +1,7 @@
 import DBUsr
 import socket
 import sqlite3
+import os
 
 '''群组模块，定义群组操作相关函数'''
 
@@ -33,6 +34,15 @@ def new_group(name, founderid, foundername):
     conn.close()
 
     return curid
+
+def del_group(groupid):
+    '''解散一个群聊'''
+    conn = sqlite3.connect('AllGroups.db')
+    conn.execute('''DELETE from AllGroups where ID=?''', (groupid, ))
+    conn.commit()
+    conn.close()
+
+    os.remove('Groups\\' + str(groupid) + '.db')
 
 def get_profile(uid):
     '''读取群基本信息'''

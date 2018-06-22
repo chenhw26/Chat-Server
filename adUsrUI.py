@@ -2,17 +2,14 @@ import tkinter
 import tkinter.messagebox
 import tkinter.ttk
 import threading
-import json
-import os
-import Usr
+import sqlite3
+import DBUsr as Usr
 
 class AdUsrUI(threading.Thread):
     '''管理单个用户的UI类'''
-    def __init__(self, profile, usr_locks, usr_locks_lock):
+    def __init__(self, profile):
         super().__init__()
         self.usrid = str(profile[0])
-        self.usr_locks = usr_locks
-        self.usr_locks_lock = usr_locks_lock
         self.profile = profile
         
     def drawframe2(self):
@@ -54,9 +51,8 @@ class AdUsrUI(threading.Thread):
         '''封禁一个用户'''
         confirm = tkinter.messagebox.askyesno(title = '封禁', message='你确定要封禁用户 ' + self.usrid + ' 吗?')
         if confirm:
-            self.profile[3] = True
-            Usr.check_lock(int(self.usrid), self.usr_locks, self.usr_locks_lock)
-            Usr.update_profile(self.profile, self.usrid, self.usr_locks[int(self.usrid)])
+            self.profile = self.profile[:3] + (True,)
+            Usr.update_profile(self.profile, self.usrid)
             
             self.real_state.config(text = str(self.profile[3]))
             self.button1.config(state = 'disable')
@@ -69,10 +65,8 @@ class AdUsrUI(threading.Thread):
         confirm = tkinter.messagebox.askyesno(
             title='解封', message='你确定要解封用户 ' + self.usrid + ' 吗?')
         if confirm:
-            self.profile[3] = False
-            Usr.check_lock(int(self.usrid), self.usr_locks,
-                           self.usr_locks_lock)
-            Usr.update_profile(self.profile, self.usrid,self.usr_locks[int(self.usrid)])
+            self.profile = self.profile[:3] + (False,)
+            Usr.update_profile(self.profile, self.usrid)
 
             self.real_state.config(text=str(self.profile[3]))
             self.button1.config(state='normal')
@@ -104,8 +98,13 @@ class AdUsrUI(threading.Thread):
         sheet.heading('1', text='ID')
         sheet.heading('2', text='name')
 
-        with open('usr\\' + self.usrid + '\\' + listname) as fp:
-            l = json.load(fp)
+        if listname == 'friends':
+            l = Usr.get_friends(self.profile[0])
+        elif listname == 'groups':
+            l = Usr.get_groups(self.profile[0])
+        elif listname == 'black':
+            l = Usr.get_black(self.profile[0])
+
         for item in l.items():
             sheet.insert('', tkinter.END, values = item)
 
@@ -121,13 +120,12 @@ class AdUsrUI(threading.Thread):
         '''打印所有说说'''
         win = tkinter.Tk()
         sheet = tkinter.ttk.Treeview(win, height=10, show='headings', column=('1', '2'))
-        sheet.column('1', width=100, anchor=tkinter.CENTER)
-        sheet.column('2', width=100, anchor=tkinter.CENTER)
+        sheet.column('1', width=200, anchor=tkinter.CENTER)
+        sheet.column('2', width=200, anchor=tkinter.CENTER)
         sheet.heading('1', text='time')
         sheet.heading('2', text='content')
 
-        with open('usr\\' + self.usrid + '\\moments.txt') as fp:
-            l = json.load(fp)
+        l = Usr.get_moments(self.profile[0])
         for item in l.values():
             sheet.insert('', tkinter.END, values = item)
 
@@ -152,13 +150,11 @@ class AdUsrUI(threading.Thread):
         sheet.heading('3', text='receiver')
         sheet.heading('4', text='content')
 
-        allfriens = os.listdir('usr\\' + self.usrid + '\\record')
-        for friends in allfriens:
-            with open('usr\\' + self.usrid + '\\record\\' + friends) as fp:
-                l = json.load(fp)
+        allfriens = Usr.get_friends(self.profile[0])
+        for friends in allfriens.keys():
+            l = Usr.get_record(self.profile[0], friends)
             for item in l:
-                item[0], item[2] = item[2], item[0]
-                sheet.insert('', tkinter.END, values = item)
+                sheet.insert('', tkinter.END, values = (item[2], item[1], item[2], item[3]))
 
         bar = tkinter.ttk.Scrollbar(
             win, command=sheet.yview, orient=tkinter.VERTICAL)
@@ -173,11 +169,11 @@ class AdUsrUI(threading.Thread):
         self.frame4 = tkinter.LabelFrame(self.frame1, text = 'Detail', labelanchor = 'n', borderwidth = 1, bg = 'MintCream')
 
         self.button3 = tkinter.Button(self.frame4, text = 'Friends', relief = tkinter.GROOVE, 
-                                      width = 15, cursor = 'hand2', command = lambda:self.showlist('friends.txt'))
+                                      width = 15, cursor = 'hand2', command = lambda:self.showlist('friends'))
         self.button4 = tkinter.Button(self.frame4, text = 'Black', relief = tkinter.GROOVE, 
-                                      width=15, cursor='hand2', command=lambda: self.showlist('black.txt'))
+                                      width=15, cursor='hand2', command=lambda: self.showlist('black'))
         self.button5 = tkinter.Button(self.frame4, text='Groups', relief=tkinter.GROOVE, 
-                                      width = 15, cursor = 'hand2', command = lambda:self.showlist('groups.txt'))
+                                      width = 15, cursor = 'hand2', command = lambda:self.showlist('groups'))
         self.button6 = tkinter.Button(self.frame4, text='Moments', relief=tkinter.GROOVE, 
                                       width = 15, cursor = 'hand2', command = self.showmoment)
         self.button7 = tkinter.Button(self.frame4, text='Record', relief=tkinter.GROOVE, 

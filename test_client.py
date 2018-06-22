@@ -20,7 +20,8 @@ t.start()
 while True:
     msg = input()
     for i in range(0, len(msg)):
-        if msg[i] == 'n':   msg[i] = '\n'
+        if msg[i] == 'n':   
+            msg = msg[:i] + '\n' + msg[i+1:]
     s.send(msg.encode('utf-8'))
     if msg == '9':  break
 s.close()

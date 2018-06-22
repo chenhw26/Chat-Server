@@ -5,18 +5,15 @@ import time
 import adUsrUI
 import adGroupUI
 import threading
-import os
-import json
+import DBUsr as Usr
+import DBGroup as Group
+import sqlite3
 
 class MainUI(threading.Thread):
     '''显示管理窗口'''
-    def __init__(self, onlinesocket, usr_locks, usr_locks_lock, group_locks, group_locks_lock):
+    def __init__(self, onlinesocket):
         super().__init__()
         self.onlinesocket = onlinesocket
-        self.usr_locks = usr_locks
-        self.usr_locks_lock = usr_locks_lock
-        self.group_locks = group_locks
-        self.group_locks_lock = group_locks_lock
 
     def drawframe4(self):
         '''绘制frame4'''
@@ -35,12 +32,12 @@ class MainUI(threading.Thread):
         for item in allitems:
             self.sheet1.delete(item)
 
-        allUsr = os.listdir('usr')
-        for usr in allUsr:
-            with open('usr\\' + usr + '\\profile.txt') as fp:
-                profile = json.load(fp)
-                self.sheet1.insert('', tkinter.END, values = (profile[0], profile[1], profile[3], 
-                                                              'yes' if int(usr) in self.onlinesocket else 'no'))
+        conn = sqlite3.connect('AllUsers.db')
+        allUsr = conn.execute('''SELECT * from AllUsers''').fetchall()
+        conn.close()
+        for profile in allUsr:
+            self.sheet1.insert('', tkinter.END, values = (profile[0], profile[1], profile[3], 
+                                                              'yes' if profile[0] in self.onlinesocket else 'no'))
 
     def drawframe8(self):
         '''绘制frame8'''
@@ -48,14 +45,14 @@ class MainUI(threading.Thread):
 
         self.sheet1 = ttk.Treeview(self.frame8, height=10, show="headings",
                                    column=('1', '2', '3', '4'))
-        self.sheet1.column('1', width=87, anchor = tkinter.E)
-        self.sheet1.column('2', width=87, anchor = tkinter.E)
-        self.sheet1.column('3', width=87, anchor = tkinter.E)
-        self.sheet1.column('4', width=87, anchor=tkinter.E)
-        self.sheet1.heading('1', text='id')
-        self.sheet1.heading('2', text='name')
-        self.sheet1.heading('3', text='state')
-        self.sheet1.heading('4', text='online')
+        self.sheet1.column('1', width=87, anchor = tkinter.CENTER)
+        self.sheet1.column('2', width=87, anchor = tkinter.CENTER)
+        self.sheet1.column('3', width=87, anchor = tkinter.CENTER)
+        self.sheet1.column('4', width=87, anchor=tkinter.CENTER)
+        self.sheet1.heading('1', text='ID')
+        self.sheet1.heading('2', text='Name')
+        self.sheet1.heading('3', text='Ban')
+        self.sheet1.heading('4', text='Online')
 
         self.getUsrSheetItems()
 
@@ -70,12 +67,18 @@ class MainUI(threading.Thread):
         '''查看一个用户详细信息，启动AdUsrUI类'''
         usrid = self.inputbar1.get()
         try:
-            with open('usr\\' + usrid + '\\profile.txt') as fp:
-                profile = json.load(fp)
-                subUI = adUsrUI.AdUsrUI(profile, self.usr_locks, self.usr_locks_lock)
-                subUI.start()
+            usrid = int(usrid)
         except:
-            tkinter.messagebox.showerror(title='Error', message='UserID:' + usrid + ' doesn\'t exist!')
+            tkinter.messagebox.showerror(
+                title='Error', message='Please input a valid ID!')
+            return
+
+        profile = Usr.get_profile(usrid)
+        if profile[1]:
+            subUI = adUsrUI.AdUsrUI(profile[0])
+            subUI.start()
+        else:
+            tkinter.messagebox.showerror(title='Error', message='UserID:' + str(usrid) + ' doesn\'t exist!')
 
     def drawframe6(self):
         '''绘制frame6'''
@@ -115,11 +118,11 @@ class MainUI(threading.Thread):
         for item in allitems:
             self.sheet2.delete(item)
 
-        allGroup = os.listdir('group')
-        for group in allGroup:
-            with open('group\\' + group + '\\profile.txt') as fp:
-                profile = json.load(fp)
-                self.sheet2.insert('', tkinter.END, values=profile)
+        conn = sqlite3.connect('AllGroups.db')
+        allGroup = conn.execute('''SELECT * from AllGroups''').fetchall()
+        conn.close()
+        for profile in allGroup:
+            self.sheet2.insert('', tkinter.END, values=profile)
 
 
     def drawframe9(self):
@@ -128,12 +131,12 @@ class MainUI(threading.Thread):
 
         self.sheet2 = ttk.Treeview(self.frame9, height=10, show="headings",
                                    column=('1', '2', '3'))
-        self.sheet2.column('1', width=116, anchor = tkinter.E)
-        self.sheet2.column('2', width=116, anchor = tkinter.E)
-        self.sheet2.column('3', width=116, anchor=tkinter.E)
-        self.sheet2.heading('1', text='id')
-        self.sheet2.heading('2', text='name')
-        self.sheet2.heading('3', text='state')
+        self.sheet2.column('1', width=116, anchor = tkinter.CENTER)
+        self.sheet2.column('2', width=116, anchor = tkinter.CENTER)
+        self.sheet2.column('3', width=116, anchor=tkinter.CENTER)
+        self.sheet2.heading('1', text='ID')
+        self.sheet2.heading('2', text='NickName')
+        self.sheet2.heading('3', text='Ban')
         
         self.getGroupSheetItems()
 
@@ -148,14 +151,19 @@ class MainUI(threading.Thread):
         '''查看群组详细信息，启动adGroupUI类'''
         groupid = self.inputbar2.get()
         try:
-            with open('group\\' + groupid + '\\profile.txt') as fp:
-                profile = json.load(fp)
-                subUI = adGroupUI.AdGroupUI(
-                    profile, self.group_locks, self.group_locks_lock)
-                subUI.start()
+            groupid = int(groupid)
         except:
             tkinter.messagebox.showerror(
-                title='Error', message='GroupID:' + groupid + ' doesn\'t exist!')
+                title='Error', message='Please input a valid ID!')
+            return
+
+        profile = Group.get_profile(groupid)
+        if profile:
+            subUI = adGroupUI.AdGroupUI(profile)
+            subUI.start()
+        else:
+            tkinter.messagebox.showerror(
+                title='Error', message='GroupID:' + str(groupid) + ' doesn\'t exist!')
 
     def drawframe7(self):
         '''绘制frame7'''

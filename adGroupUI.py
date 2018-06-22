@@ -1,17 +1,13 @@
 import tkinter
 import tkinter.ttk
 import threading
-import json
-import os
-import Group
+import DBGroup as Group
 
 class AdGroupUI(threading.Thread):
     '''管理群组的UI类'''
-    def __init__(self, profile, group_locks, group_locks_lock):
+    def __init__(self, profile):
         super().__init__()
         self.groupid = int(profile[0])
-        self.group_locks = group_locks
-        self.group_locks_lock = group_locks_lock
         self.profile = profile
     
     def drawframe2(self):
@@ -48,11 +44,8 @@ class AdGroupUI(threading.Thread):
         confirm = tkinter.messagebox.askyesno(
             title='封禁', message='你确定要封禁群 ' + str(self.groupid) + ' 吗?')
         if confirm:
-            self.profile[2] = True
-            Group.check_lock(int(self.groupid), self.group_locks,
-                           self.group_locks_lock)
-            Group.update_profile(self.groupid, self.profile,
-                               self.group_locks[int(self.groupid)])
+            self.profile = self.profile[:2] + (True,)
+            Group.update_profile(self.groupid, self.profile)
 
             self.real_state.config(text=str(self.profile[2]))
             self.button1.config(state='disable')
@@ -66,11 +59,8 @@ class AdGroupUI(threading.Thread):
         confirm = tkinter.messagebox.askyesno(
             title='解封', message='你确定要解封群组 ' + str(self.groupid) + ' 吗?')
         if confirm:
-            self.profile[2] = False
-            Group.check_lock(int(self.groupid), self.group_locks,
-                           self.group_locks_lock)
-            Group.update_profile(self.groupid, self.profile,
-                               self.group_locks[int(self.groupid)])
+            self.profile = self.profile[:2] + (False,)
+            Group.update_profile(self.groupid, self.profile)
             self.real_state.config(text=str(self.profile[2]))
             self.button1.config(state='normal')
             self.button2.config(state='disable')
@@ -105,9 +95,16 @@ class AdGroupUI(threading.Thread):
         sheet.heading('1', text='ID')
         sheet.heading('2', text='name')
 
-        with open('group\\' + str(self.groupid) + '\\' + listname) as fp:
-            l = json.load(fp)
-        for item in l.items():
+        allmem = Group.get_mem(self.profile[0])
+        l = []
+        if listname == 'members':
+            for mem in allmem:
+                l.append(mem[:2])
+        elif listname == 'ad':
+            for mem in allmem:
+                if mem[2]:
+                    l.append(mem[:2])
+        for item in l:
             sheet.insert('', tkinter.END, values=item)
 
         bar = tkinter.ttk.Scrollbar(
@@ -122,19 +119,19 @@ class AdGroupUI(threading.Thread):
         '''打印群聊天记录'''
         win = tkinter.Tk()
         sheet = tkinter.ttk.Treeview(
-            win, height=10, show='headings', column=('1', '2', '3'))
+            win, height=10, show='headings', column=('1', '2', '3', '4'))
         sheet.column('1', width=150, anchor=tkinter.CENTER)
-        sheet.column('2', width=75, anchor=tkinter.CENTER)
-        sheet.column('3', width=250, anchor=tkinter.CENTER)
+        sheet.column('2', width=50, anchor=tkinter.CENTER)
+        sheet.column('3', width=75, anchor=tkinter.CENTER)
+        sheet.column('4', width=250, anchor=tkinter.CENTER)
         sheet.heading('1', text='time')
-        sheet.heading('2', text='sender')
-        sheet.heading('3', text='content')
+        sheet.heading('2', text='senderid')
+        sheet.heading('3', text='sender')
+        sheet.heading('4', text='content')
 
-        with open('group\\' + str(self.groupid) + '\\record.txt') as fp:
-            l = json.load(fp)
+        l = Group.get_record(self.profile[0])
         for item in l:
-            item[0], item[1] = item[1], item[0]
-            sheet.insert('', tkinter.END, values=item)
+            sheet.insert('', tkinter.END, values=(item[2], item[1], item[0], item[3]))
 
         bar = tkinter.ttk.Scrollbar(
             win, command=sheet.yview, orient=tkinter.VERTICAL)
@@ -149,9 +146,9 @@ class AdGroupUI(threading.Thread):
         self.frame4 = tkinter.LabelFrame(
             self.frame1, text='Detail', labelanchor='n', borderwidth=1, bg='MintCream')
 
-        self.button3 = tkinter.Button(self.frame4, text='Members', command = lambda:self.showlist('members.txt'), 
+        self.button3 = tkinter.Button(self.frame4, text='Members', command = lambda:self.showlist('members'), 
                                       relief=tkinter.GROOVE, width=15, cursor = 'hand2')
-        self.button4 = tkinter.Button(self.frame4, text='Administrators', command=lambda: self.showlist('ad.txt'),
+        self.button4 = tkinter.Button(self.frame4, text='Administrators', command=lambda: self.showlist('ad'),
                                       relief=tkinter.GROOVE, width=15, cursor = 'hand2')
         self.button5 = tkinter.Button(self.frame4, text='Record', command = self.showrecord, 
                                       relief=tkinter.GROOVE, width=15, cursor = 'hand2')

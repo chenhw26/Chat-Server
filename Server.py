@@ -2,7 +2,7 @@ import threading
 import json
 import socket
 import time
-import Usr
+import DBUsr as Usr
 import PrivateChat
 import Moments
 import GroupChat
@@ -10,14 +10,10 @@ import FriendsManage
 
 class Server(threading.Thread):
 	"""服务器类，继承自线程类，为每个TCP连接创建一个线程，这个线程专门处理该连接发来的消息"""
-	def __init__(self, onlinesocket, onlinesocket_lock, usr_locks, usr_locks_lock, group_locks, group_locks_lock, sock):
+	def __init__(self, onlinesocket, onlinesocket_lock, sock):
 		super().__init__()
 		self.onlinesocket = onlinesocket
 		self.onlinesocket_lock = onlinesocket_lock
-		self.usr_locks = usr_locks
-		self.usr_locks_lock = usr_locks_lock
-		self.group_locks = group_locks
-		self.group_locks_lock = group_locks_lock
 		self.sock = sock
 		print("new usr")
 
@@ -74,9 +70,7 @@ class Server(threading.Thread):
 		self.onlinesocket[self.id] = self.sock                 #更新在线用户sock
 		self.onlinesocket_lock.release()
 		
-		Usr.check_lock(self.id, self.usr_locks, self.usr_locks_lock)
-
-		unrecieved = Usr.get_and_clear_unrecieved(self.id, self.usr_locks[self.id])
+		unrecieved = Usr.get_and_clear_unreceived(self.id)
 		for msg in unrecieved:
 			print('send unreceived')
 			time.sleep(0.1)
@@ -89,13 +83,13 @@ class Server(threading.Thread):
 			cmd = self.sock.recv(4096).decode('utf-8')
 			print('rec:', cmd)
 			if cmd[0] == '0':
-				PrivateChat.private_chat(cmd[1:], self.profile, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
+				PrivateChat.private_chat(cmd[1:], self.profile, self.sock, self.onlinesocket)
 			elif cmd[0] == '1':
-				GroupChat.group_chat(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock, self.group_locks, self.group_locks_lock)
+				GroupChat.group_chat(cmd[1:], self.id, self.sock, self.onlinesocket)
 			elif cmd[0] == '2':
-				Moments.moments(cmd[1:], self.id, self.sock, self.usr_locks)
+				Moments.moments(cmd[1:], self.id, self.sock)
 			elif cmd[0] == '3':
-				FriendsManage.friends_manage(cmd[1:], self.id, self.sock, self.onlinesocket, self.usr_locks, self.usr_locks_lock)
+				FriendsManage.friends_manage(cmd[1:], self.id, self.sock, self.onlinesocket)
 			elif cmd[0] == '4':      # 拉取个人信息
 				profile = (Usr.get_profile(self.id))[0]
 				allfriends = Usr.get_friends(self.id)
@@ -118,10 +112,6 @@ class Server(threading.Thread):
 		self.onlinesocket_lock.acquire()
 		del self.onlinesocket[self.id]                                  # 删除该用户的sock
 		self.onlinesocket_lock.release()
-
-		self.usr_locks_lock.acquire()
-		del self.usr_locks[self.id]                                      # 删除文件锁
-		self.usr_locks_lock.release()
 
 		self.sock.close()
 		print("usr quit4")
