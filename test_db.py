@@ -1,37 +1,36 @@
 import DBUsr as usr
 import DBGroup as group
+import unittest
 
-# print(usr.get_profile(10000))
-curid1 = usr.new_usr('name', '666666')
-curid2 = usr.new_usr('name2', '666666')
-print(curid1, curid2)
-print(usr.get_profile(curid1))
-print(usr.get_profile(curid2))
+class TestDBGroup(unittest.TestCase):
+    def test_all(self):
+        curid = group.new_group('group', 10000, 'founder')
+        self.assertEqual(curid, 10005)
+        self.assertEqual(group.get_profile(curid), (curid, 'group', False))
+        group.update_profile(curid, (curid, 'group1', False))
+        self.assertEqual(group.get_profile(curid), (curid, 'group1', False))
 
-usr.update_profile((curid1, 'name1', '666666', False), curid1)
-print(usr.get_profile(curid1))
+        self.assertEqual(group.get_mem(curid), [(10000, 'founder', True, False)])
+        group.add_mem(curid, 10001, 'member')
+        self.assertEqual(group.get_mem(curid), [(10000, 'founder', True, False), (10001, 'member', False, False)])
+        group.del_mem(curid, 10001)
+        self.assertEqual(group.get_mem(curid), [(10000, 'founder', True, False)])
 
-usr.add_friend((curid2, 'name2'), curid1)
-print(usr.get_friends(curid1))
-usr.del_friend(curid2, curid1)
-print(usr.get_friends(curid1))
+        group.add_mem(curid, 10001, 'member')
+        group.add_ad(curid, 10001)
+        self.assertEqual(group.get_mem(curid), [(10000, 'founder', True, False), (10001, 'member', True, False)])
+        group.del_ad(curid, 10001)
+        self.assertEqual(group.get_mem(curid), [(10000, 'founder', True, False), (10001, 'member', False, False)])
 
-usr.add_black((curid2, 'name2'), curid1)
-print(usr.get_black(curid1))
-usr.del_black(curid2, curid1)
-print(usr.get_black(curid1))
+        group.add_pingbi(curid, 10000)
+        self.assertEqual(group.get_mem(curid), [
+                     (10000, 'founder', True, True), (10001, 'member', False, False)])
+        group.del_pingbi(curid, 10000)
+        self.assertEqual(group.get_mem(curid), [
+                     (10000, 'founder', True, False), (10001, 'member', False, False)])
 
-usr.join_group((10000, 'group'), curid1)
-print(usr.get_groups(curid1))
-usr.del_group(10000, curid1)
-print(usr.get_groups(curid1))
+        self.assertEqual(group.get_record(curid), [])
+        group.add_record(curid, 'founder', 10000, 'time', 'content')
+        self.assertEqual(group.get_record(curid), [('founder', 10000, 'time', 'content')])
 
-usr.add_moments((10000, 'time', 'content'), curid1)
-print(usr.get_moments(curid1))
-
-usr.add_record(('name1', 'name2', 'time', 'content'), curid1, curid2)
-print(usr.get_record(curid1, curid2))
-
-usr.add_unreceived(curid1, '666666')
-print(usr.get_and_clear_unreceived(curid1))
-print(usr.get_and_clear_unreceived(curid1))
+unittest.main()

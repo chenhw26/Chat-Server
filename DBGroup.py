@@ -11,7 +11,7 @@ def new_group(name, founderid, foundername):
     if not allid:
         curid = 10000
     else:
-        curid = max(allid)[0]
+        curid = max(allid)[0] + 1
     conn.execute('''INSERT into Allgroups values(?,?,?)''', (curid, name, False))
     conn.commit()
     conn.close()
@@ -37,7 +37,7 @@ def new_group(name, founderid, foundername):
 def get_profile(uid):
     '''读取群基本信息'''
     conn = sqlite3.connect('AllGroups.db')
-    profile = conn.execute('''SELECT * from Allgroups where ID=?''', (uid,))
+    profile = conn.execute('''SELECT * from Allgroups where ID=?''', (uid,)).fetchone()
     conn.close()
     return profile
 
@@ -58,7 +58,7 @@ def get_mem(uid):
 
 def add_mem(groupid, memid, memname):
     '''新增成员'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''INSERT into members values(?,?,?,?)''', 
                     (memid, memname, False, False))
     conn.commit()
@@ -66,14 +66,14 @@ def add_mem(groupid, memid, memname):
 
 def del_mem(groupid, memid):
     '''删除成员'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''DELETE from members where ID=?''', (memid, ))
     conn.commit()
     conn.close()
 
 def add_ad(groupid, memid):
     '''新增管理员'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''UPDATE members set ad=? where ID=?''', 
                  (True, memid))
     conn.commit()
@@ -81,7 +81,7 @@ def add_ad(groupid, memid):
 
 def del_ad(groupid, memid):
     '''删除管理员'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''UPDATE members set ad=? where ID=?''', 
                  (False, memid))
     conn.commit()
@@ -89,7 +89,7 @@ def del_ad(groupid, memid):
 
 def add_pingbi(groupid, memid):
     '''某人屏蔽该群'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''UPDATE members set pingbi=? where ID=?''', 
                  (True, memid))
     conn.commit()
@@ -97,7 +97,7 @@ def add_pingbi(groupid, memid):
 
 def del_pingbi(groupid, memid):
     '''取消屏蔽'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''UPDATE members set pingbi=? where ID=?''', 
                  (False, memid))
     conn.commit()
@@ -105,7 +105,7 @@ def del_pingbi(groupid, memid):
 
 def get_record(groupid):
     '''读取聊天记录'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     rec = conn.execute('''SELECT * from record''').fetchall()
     conn.close()
     return rec
@@ -113,7 +113,7 @@ def get_record(groupid):
 
 def add_record(groupid, sendername, senderid, time, content):
     '''添加一条聊天记录'''
-    conn = sqlite3.connect('Groups/' + str(groupid) + '.id')
+    conn = sqlite3.connect('Groups/' + str(groupid) + '.db')
     conn.execute('''INSERT into record values(?,?,?,?)''',
                     (sendername, senderid, time, content))
     conn.commit()
