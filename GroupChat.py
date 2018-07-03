@@ -4,7 +4,6 @@ import json
 import threading
 import time
 import shutil
-import mockSock
 
 """定义群聊有关函数"""
 

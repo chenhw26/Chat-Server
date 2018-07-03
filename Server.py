@@ -7,6 +7,7 @@ import PrivateChat
 import Moments
 import GroupChat
 import FriendsManage
+import GameRequest
 
 class Server(threading.Thread):
 	"""服务器类，继承自线程类，为每个TCP连接创建一个线程，这个线程专门处理该连接发来的消息"""
@@ -104,6 +105,8 @@ class Server(threading.Thread):
 					time.sleep(0.1)
 					self.sock.send(json.dumps(allgroups).encode('utf-8'))
 					time.sleep(0.1)
+				elif cmd[0] == '5':
+					GameRequest.gameRequest(cmd[1:], self.id, self.sock, self.onlinesocket)
 				elif cmd[0] == '9':
 					break
 				else:
